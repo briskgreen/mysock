@@ -67,12 +67,12 @@ void init_data_with_client(struct sockaddr_in *server_addr,char *host,int port)
 
 void close_with_safe(int sockfd)
 {
-	/*while(shutdown(sockfd,SHUT_WR)==-1)
+	while(shutdown(sockfd,SHUT_WR)==-1)
 		perror("Shutdown");
 
-	while(close(sockfd)==-1)
+	/*while(close(sockfd)==-1)
 		perror("Close");*/
 
-	shutdown(sockfd,SHUT_WR);
-	close(sockfd);
+	//shutdown(sockfd,SHUT_WR);
+	//close(sockfd);
 }
