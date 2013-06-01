@@ -57,7 +57,10 @@ void init_data_with_client(struct sockaddr_in *server_addr,char *host,int port)
 	struct hostent *hostname;
 
 	if((hostname=gethostbyname(host))==NULL)
-		error_quit("Get Host name");
+	{
+		herror("gethostbyname");
+		exit(-1);
+	}
 
 	bzero(server_addr,sizeof(struct sockaddr_in));
 	server_addr->sin_family=AF_INET;
