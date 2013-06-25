@@ -16,7 +16,7 @@ int Socket(int domain,int type,int prot)
 	return sockfd;
 }
 
-void Bind(int sockfd,struct sockaddr_in *server_addr)
+void Bind(int sockfd,SA_IN *server_addr)
 {
 	if(bind(sockfd,(SA *)server_addr,sizeof(SA_IN))==-1)
 		error_quit("Bind");
@@ -28,7 +28,7 @@ void Listen(int sockfd,int backlog)
 		error_quit("Listen");
 }
 
-int Accept(int sockfd,struct sockaddr_in *client_addr,socklen_t *size)
+int Accept(int sockfd,SA_IN *client_addr,socklen_t *size)
 {
 	int new_sockfd;
 
@@ -38,21 +38,21 @@ int Accept(int sockfd,struct sockaddr_in *client_addr,socklen_t *size)
 	return new_sockfd;
 }
 
-void Connect(int sockfd,struct sockaddr_in *server_addr)
+void Connect(int sockfd,SA_IN *server_addr)
 {
 	if(connect(sockfd,(SA *)server_addr,sizeof(SA_IN))==-1)
 		error_quit("Connect");
 }
 
-void init_data_with_server(struct sockaddr_in *server_addr,int port)
+void init_data_with_server(SA_IN *server_addr,int port)
 {
-	bzero(server_addr,sizeof(struct sockaddr_in));
+	bzero(server_addr,sizeof(SA_IN));
 	server_addr->sin_family=AF_INET;
 	server_addr->sin_port=htons(port);
 	server_addr->sin_addr.s_addr=INADDR_ANY;
 }
 
-void init_data_with_client(struct sockaddr_in *server_addr,char *host,int port)
+void init_data_with_client(SA_IN *server_addr,char *host,int port)
 {
 	struct hostent *hostname;
 
@@ -62,20 +62,8 @@ void init_data_with_client(struct sockaddr_in *server_addr,char *host,int port)
 		exit(-1);
 	}
 
-	bzero(server_addr,sizeof(struct sockaddr_in));
+	bzero(server_addr,sizeof(SA_IN));
 	server_addr->sin_family=AF_INET;
 	server_addr->sin_port=htons(port);
 	server_addr->sin_addr.s_addr=inet_addr(inet_ntoa(*(struct in_addr *)hostname->h_addr_list[0]));
-}
-
-void close_with_safe(int sockfd)
-{
-	while(shutdown(sockfd,SHUT_WR)==-1)
-		perror("Shutdown");
-
-	/*while(close(sockfd)==-1)
-		perror("Close");*/
-
-	//shutdown(sockfd,SHUT_WR);
-	//close(sockfd);
 }

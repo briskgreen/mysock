@@ -19,18 +19,16 @@ void error_quit(const char *msg);
 
 int Socket(int domain,int type,int prot);
 
-void Bind(int sockfd,struct sockaddr_in *server_addr);
+void Bind(int sockfd,SA_IN *server_addr);
 
 void Listen(int sockfd,int backlog);
 
-int Accept(int sockfd,struct sockaddr_in *client_addr,socklen_t *size);
+int Accept(int sockfd,SA_IN *client_addr,socklen_t *size);
 
-void Connect(int sockfd,struct sockaddr_in *server_addr);
+void Connect(int sockfd,SA_IN *server_addr);
 
-void init_data_with_server(struct sockaddr_in *server_addr,int port);
+void init_data_with_server(SA_IN *server_addr,int port);
 
-void init_data_with_client(struct sockaddr_in *server_addr,char *host,int port);
-
-void close_with_safe(int sockfd);
+void init_data_with_client(SA_IN *server_addr,char *host,int port);
 
 #endif
