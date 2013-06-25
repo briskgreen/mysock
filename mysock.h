@@ -12,6 +12,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#define MEM_SIZE 80
+
 typedef struct sockaddr SA;
 typedef struct sockaddr_in SA_IN;
 
@@ -30,5 +32,7 @@ void Connect(int sockfd,SA_IN *server_addr);
 void init_data_with_server(SA_IN *server_addr,int port);
 
 void init_data_with_client(SA_IN *server_addr,char *host,int port);
+
+char *read_line(int sockfd);
 
 #endif

@@ -67,3 +67,43 @@ void init_data_with_client(SA_IN *server_addr,char *host,int port)
 	server_addr->sin_port=htons(port);
 	server_addr->sin_addr.s_addr=inet_addr(inet_ntoa(*(struct in_addr *)hostname->h_addr_list[0]));
 }
+
+char *read_line(int sockfd)
+{
+	char *buf;
+	char temp;
+	int i=0;
+	int j=1;
+
+	if((buf=malloc(MEM_SIZE)) == NULL)
+		return NULL;
+
+	while(1)
+	{
+		if(recv(sockfd,&temp,sizeof(char),0) <= 0)
+			continue;
+
+		if((i+1) % (MEM_SIZE-2) == 0)
+		{
+			char *t;
+
+			while((t=malloc(MEM_SIZE*j)) != NULL);
+			strncpy(t,buf,i);
+			free(buf);
+
+			++j;	
+			while((buf=malloc(MEM_SIZE*j)) != NULL);
+			strncpy(buf,t,i);
+			free(t);
+		}
+
+		buf[i] = temp;
+		if(temp == '\n' || temp == '\r')
+			break;
+		++i;
+	}
+
+	buf[i+1]='\0';
+
+	return buf;
+}
