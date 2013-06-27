@@ -87,12 +87,12 @@ char *read_line(int sockfd)
 		{
 			char *t;
 
-			while((t=malloc(MEM_SIZE*j)) != NULL);
+			while((t=malloc(MEM_SIZE*j)) == NULL);
 			strncpy(t,buf,i);
 			free(buf);
 
 			++j;	
-			while((buf=malloc(MEM_SIZE*j)) != NULL);
+			while((buf=malloc(MEM_SIZE*j)) == NULL);
 			strncpy(buf,t,i);
 			free(t);
 		}
