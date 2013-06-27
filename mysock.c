@@ -72,6 +72,7 @@ char *read_line(int sockfd)
 {
 	char *buf;
 	char temp;
+	int k=0;
 	int i=0;
 	int j=1;
 
@@ -81,18 +82,38 @@ char *read_line(int sockfd)
 	while(1)
 	{
 		if(recv(sockfd,&temp,sizeof(char),0) <= 0)
-			continue;
+		{
+			++k;
+
+			if(k % 5)
+				return NULL;
+			else
+				continue;
+		}
 
 		if((i+1) % (MEM_SIZE-2) == 0)
 		{
 			char *t;
 
-			while((t=malloc(MEM_SIZE*j)) == NULL);
+			k=0;
+			while((t=malloc(MEM_SIZE*j)) == NULL)
+			{
+				++k;
+
+				if(k % 5 ==0)
+					return NULL;
+			}
 			strncpy(t,buf,i);
 			free(buf);
 
 			++j;	
-			while((buf=malloc(MEM_SIZE*j)) == NULL);
+			while((buf=malloc(MEM_SIZE*j)) == NULL)
+			{
+				++k;
+
+				if(k % 5 ==0)
+					return NULL;
+			}
 			strncpy(buf,t,i);
 			free(t);
 		}
@@ -101,6 +122,7 @@ char *read_line(int sockfd)
 		if(temp == '\n' || temp == '\r')
 			break;
 		++i;
+		k=0;
 	}
 
 	buf[i+1]='\0';
