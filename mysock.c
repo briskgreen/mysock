@@ -129,3 +129,32 @@ char *read_line(int sockfd)
 
 	return buf;
 }
+
+int tcp_conect(char *url,int port)
+{
+	SA_IN server_addr;
+	int sockfd;
+
+	sockfd=Socket(AF_INET,SOCK_STREAM,0);
+	init_data_with_client(&server_addr,url,port);
+	if(connect(sockfd,(SA *)&server_addr,sizeof(SA_IN)) == -1)
+		return -1;
+
+	return sockfd;
+}
+
+char *url_encode(char *string)
+{
+	char *res;
+	int len;
+	int i,j;
+
+	len=strlen(string)*3;
+	res=malloc(len+1);
+	bzero(res,len+1);
+
+	for(i=0,j=0;string[i];++i,j+=3)
+		sprintf(res+j,"%%%x",(unsigned char)string[i]);
+
+	return res;
+}

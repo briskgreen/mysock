@@ -35,4 +35,8 @@ void init_data_with_client(SA_IN *server_addr,char *host,int port);
 
 char *read_line(int sockfd);
 
+int tcp_conect(char *url,int port);
+
+char *url_encode(char *string);
+
 #endif
