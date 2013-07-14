@@ -81,7 +81,7 @@ char *read_line(int sockfd)
 
 	while(1)
 	{
-		if(recv(sockfd,&temp,sizeof(char),0) <= 0)
+		if(recv(sockfd,&temp,sizeof(char),0) == -1)
 		{
 			++k;
 
@@ -104,7 +104,7 @@ char *read_line(int sockfd)
 					return NULL;
 			}
 			strncpy(t,buf,i);
-			free(buf);
+			safe_free(&buf);
 
 			++j;	
 			while((buf=malloc(MEM_SIZE*j)) == NULL)
@@ -115,7 +115,7 @@ char *read_line(int sockfd)
 					return NULL;
 			}
 			strncpy(buf,t,i);
-			free(t);
+			safe_free(&t);
 		}
 
 		buf[i] = temp;
@@ -154,7 +154,16 @@ char *url_encode(char *string)
 	bzero(res,len+1);
 
 	for(i=0,j=0;string[i];++i,j+=3)
-		sprintf(res+j,"%%%x",(unsigned char)string[i]);
+		sprintf(res+j,"%%%02x",(unsigned char)string[i]);
 
 	return res;
+}
+
+void safe_free(void **buf)
+{
+	if(*buf == NULL)
+		return;
+
+	free(*buf);
+	*buf=NULL;
 }

@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <regex.h>
 
 #define MEM_SIZE 80
 
@@ -38,5 +39,7 @@ char *read_line(int sockfd);
 int tcp_conect(char *url,int port);
 
 char *url_encode(char *string);
+
+void safe_free(void **buf);
 
 #endif
