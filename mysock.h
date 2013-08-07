@@ -79,4 +79,23 @@ void http_head_clean(HTTP *http);
 
 void http_head_destroy(HTTP *http);
 
+void http_send(HTTP *http,int sockfd);
+
+void https_send(HTTP *http,SSL *ssl);
+
+char *http_perform(HTTP *http,const char *host,unsigned int port);
+
+char *https_perform(HTTP *http,const char *host,unsigned int port,
+		const char *cafile,const char *capath);
+
+char *http_get_simple(const char *url,unsigned int port);
+
+char *http_post_simple(const char *url,unsigned int port,
+		const char *data);
+
+char *https_get_simple(const char *url,unsigned int port);
+
+char *https_post_simple(const char *url,unsigned int port,
+		const char *data);
+
 #endif

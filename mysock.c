@@ -436,23 +436,25 @@ void http_head_add(HTTP *http,const char *head)
 {
 	HTTP *node;
 
-	if(http->next == NULL)
+	/*if(http->element == NULL)
 	{
 		http->element=head;
 		return;
-	}
+	}*/
 
-	while(http != NULL)
+	while(http->next != NULL)
 		http=http->next;
 
 	node=malloc(sizeof(HTTP));
 	node->element=head;
 	node->next=NULL;
-	http=node;
+	http->next=node;
 }
 
 int http_head_replace(HTTP *http,const char *replace,const char *head)
 {
+	http=http->next;
+
 	while(http != NULL)
 	{
 		if(strstr(http->element,replace))
@@ -471,10 +473,10 @@ int http_head_out(HTTP *http,const char *out)
 {
 	while(http != NULL)
 	{
-		if(strstr(http->element,out))
+		if(strstr(http->next->element,out))
 		{
-			free(http);
-			http=http->next;
+			free(http->next);
+			http->next=http->next->next;
 			return 0;
 		}
 
@@ -506,4 +508,268 @@ void http_head_destroy(HTTP *http)
 		free(http);
 		http=http->next;
 	}
+}
+
+void http_send(HTTP *http,int sockfd)
+{
+	while(http->next != NULL)
+	{
+		http=http->next;
+
+		send(sockfd,http->element,strlen(http->element),0);
+	}
+}
+
+void https_send(HTTP *http,SSL *ssl)
+{
+	while(http->next != NULL)
+	{
+		http=http->next;
+
+		SSL_write(ssl,http->element,strlen(http->element));
+	}
+}
+
+char *http_perform(HTTP *http,const char *host,unsigned int port)
+{
+	int sockfd;
+	char *res;
+
+	if((sockfd=tcp_connect(host,port)) == -1)
+		return NULL;
+
+	http_send(http,sockfd);
+	res=read_all(sockfd);
+	close(sockfd);
+
+	return res;
+}
+
+char *https_perform(HTTP *http,const char *host,unsigned int port,
+		const char *cafile,const char *capath)
+{
+	SSL *ssl;
+	char *res;
+
+	if((ssl=ssl_connect(host,port,cafile,capath)) == NULL)
+		return NULL;
+	https_send(http,ssl);
+	res=ssl_read_all(ssl);
+	ssl_close(ssl);
+
+	return res;
+}
+
+char *http_get_simple(const char *url,unsigned int port)
+{
+	int sockfd;
+	char *res;
+	char *accept="Accept: */*\n";
+	char *connection="Connection: close\n\n";
+	char *host;
+	char *head;
+	int len;
+	int host_len=0;
+	int head_len;
+	int n=0;
+	int i;
+
+	len=strlen(url);
+	if(strstr(url,"https://"))
+		return NULL;
+	if(strstr(url,"http://"))
+		n=7;
+	for(i=n;url[i];++i,++host_len)
+		if(url[i]=='/')
+			break;
+	host_len+=strlen("Host: ");
+	host=malloc(host_len+2);
+	snprintf(host,host_len+1,"Host: %s\n",
+			url+n);
+	host[host_len+1]='\0';
+	head_len=strlen("GET ")+len+strlen(" HTTP/1.1\n")+1;
+	head=malloc(head_len);
+	snprintf(head,head_len-1,"GET %s HTTP/1.1\n",url);
+	head[head_len]='\0';
+
+	if((sockfd=tcp_connect(host+6,port)) == -1)
+		return NULL;
+	
+	send(sockfd,head,head_len-1,0);
+	send(sockfd,host,host_len,0);
+	send(sockfd,accept,strlen(accept),0);
+	send(sockfd,connection,strlen(connection),0);
+
+	free(head);
+	free(host);
+
+	res=read_all(sockfd);
+	close(sockfd);
+
+	return res;
+}
+
+char *http_post_simple(const char *url,unsigned int port,
+		const char *data)
+{
+	int sockfd;
+	char *res;
+	char *head;
+	char *host;
+	char *accept="Accept: */*\n";
+	char *connection="Connection: close\n";
+	char *content_length;
+	int len;
+	int host_len;
+	int head_len;
+	int content_len;
+	int n=0;
+	int i;
+
+	if(strstr(url,"https://"))
+		return NULL;
+	if(strstr(url,"http://"))
+		n=7;
+	for(i=n;url[i];++i,++host_len)
+		if(url[i] == '/')
+			break;
+
+	len=strlen(url);
+	content_len=strlen("Content-Length: ")+strlen(data)+3;
+	content_length=malloc(content_len);
+	snprintf(content_length,content_len-1,
+			"Content-Length: %d\n\n",strlen(data));
+	content_length[content_len]='\0';
+	host_len+=strlen("Host: ");
+	host=malloc(host_len+2);
+	snprintf(host,host_len+1,"Host: %s\n",url+n);
+	host[host_len+2]='\0';
+	head_len=strlen("POST ")+len+strlen(" HTTP/1.1\n")+1;
+	head=malloc(head_len);
+	snprintf(head,head_len-1,"POST %s HTTP/1.1\n",url);
+	head[head_len]='\0';
+
+	if((sockfd=tcp_connect(host+6,port)) == -1)
+		return NULL;
+
+	send(sockfd,head,head_len-1,0);
+	send(sockfd,host,host_len-1,0);
+	send(sockfd,accept,strlen(accept),0);
+	send(sockfd,connection,strlen(connection),0);
+	send(sockfd,content_length,content_len-1,0);
+	send(sockfd,data,strlen(data),0);
+
+	free(head);
+	free(host);
+	free(content_length);
+
+	res=read_all(sockfd);
+	close(sockfd);
+
+	return res;
+}
+
+char *https_get_simple(const char *url,unsigned int port)
+{
+	SSL *ssl;
+	char *res;
+	char *head;
+	char *host;
+	char *accept="Accept: */*\n";
+	char *connection="Connection: close\n\n";
+	int len;
+	int host_len=0;
+	int head_len;
+	int n=0;
+	int i;
+
+	len=strlen(url);
+	if(strstr(url,"http://"))
+		return NULL;
+	if(strstr(url,"https://"))
+		n=8;
+	for(i=n;url[i];++i,++host_len)
+		if(url[i] == '/')
+			break;
+	host_len+=strlen("Host: ")+2;
+	host=malloc(host_len);
+	snprintf(host,head_len-1,"Host: %s\n",url+n);
+	host[head_len]='\0';
+	head_len=strlen("GET ")+len+strlen(" HTTP/1.1\n")+1;
+	head=malloc(head_len);
+	snprintf(head,head_len-1,"GET %s HTTP/1.1\n",url);
+	head[head_len]='\0';
+
+	if((ssl=ssl_connect(host+6,port,NULL,NULL)) == NULL)
+		return NULL;
+
+	SSL_write(ssl,head,head_len-1);
+	SSL_write(ssl,host,host_len-1);
+	SSL_write(ssl,accept,strlen(accept));
+	SSL_write(ssl,connection,strlen(connection));
+
+	free(head);
+	free(host);
+
+	res=ssl_read_all(ssl);
+	ssl_close(ssl);
+
+	return res;
+}
+
+char *https_post_simple(const char *url,unsigned int port,
+		const char *data)
+{
+	SSL *ssl;
+	char *res;
+	char *head;
+	char *host;
+	char *accept="Accept: */*\n";
+	char *connection="Connection: close\n";
+	char *content_length;
+	int len;
+	int host_len;
+	int head_len;
+	int content_len;
+	int n=0;
+	int i;
+
+	if(strstr(url,"http://"))
+		return NULL;
+	if(strstr(url,"https://"))
+		n=8;
+	for(i=n;url[i];++i,++host_len)
+		if(url[i] == '/')
+			break;
+	len=strlen(url);
+	content_len=strlen("Content-Length: ")+strlen(data)+3;
+	content_length=malloc(content_len);
+	snprintf(content_length,content_len-1,
+			"Content-Length: %d\n\n",strlen(data));
+	content_length[content_len]='\0';
+	host_len+=strlen("Host: ")+2;
+	host=malloc(host_len);
+	snprintf(host,host_len-1,"Host: %s\n",url+n);
+	host[host_len]='\0';
+	head_len=strlen("POST ")+len+(" HTTP/1.1\n")+1;
+	head=malloc(head_len);
+	snprintf(head,head_len-1,"POST %s HTTP/1.1\n",url);
+	head[head_len]='\0';
+
+	if((ssl=ssl_connect(host+6,port,NULL,NULL)) == NULL)
+		return NULL;
+
+	SSL_write(ssl,head,head_len-1);
+	SSL_write(ssl,host,host_len-1);
+	SSL_write(ssl,accept,strlen(accept));
+	SSL_write(ssl,connection,strlen(connection));
+	SSL_write(ssl,content_length,content_len-1);
+	SSL_write(ssl,data,strlen(data));
+
+	free(head);
+	free(host);
+	free(content_length);
+
+	res=ssl_read_all(ssl);
+	return res;
 }
