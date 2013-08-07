@@ -146,7 +146,7 @@ char *read_line(int sockfd)
 	int n;
 	int flags=1;
 
-	if((res=malloc(MEM_SIZE+1)) == NULL)
+	if((res=malloc(MEM_SIZE)) == NULL)
 		return NULL;
 
 	while((n=recv(sockfd,&temp,sizeof(char),0)) > 0)
@@ -328,7 +328,7 @@ char *ssl_read_line(SSL *ssl)
 	int n;
 	int flags=1;
 
-	if((res=malloc(MEM_SIZE+1)) == NULL)
+	if((res=malloc(MEM_SIZE)) == NULL)
 		return NULL;
 
 	while((n=SSL_read(ssl,&temp,sizeof(char))) > 0)
@@ -358,4 +358,152 @@ char *ssl_read_line(SSL *ssl)
 		return NULL;
 
 	return res;
+}
+
+char *read_all(int sockfd)
+{
+	char *res;
+	int len=0;
+	int n;
+
+	if((res=malloc(MEM_SIZE)) == NULL)
+		return NULL;
+	while((n=recv(sockfd,res+len,MEM_SIZE,0)))
+	{
+		len+=n;
+
+		if(len % MEM_SIZE == 0)
+		{
+			char *temp;
+
+			temp=malloc(len);
+			strncpy(temp,res,len);
+			free(res);
+
+			res=malloc(len+MEM_SIZE);
+			strncpy(res,temp,len);
+			free(temp);
+		}
+	}
+
+	res[len]='\0';
+	return res;
+}
+
+char *ssl_read_all(SSL *ssl)
+{
+	char *res;
+	int len=0;
+	int n;
+	if((res=malloc(MEM_SIZE)) == NULL)
+		return NULL;
+	while((n=SSL_read(ssl,res+len,MEM_SIZE)))
+	{
+		len+=n;
+
+		if(len % MEM_SIZE == 0)
+		{
+			char *temp;
+
+			temp=malloc(len);
+			strncpy(temp,res,len);
+			free(res);
+
+			res=malloc(len+MEM_SIZE);
+			strncpy(res,temp,len);
+			free(temp);
+		}
+	}
+
+	res[len]='\0';
+	return res;
+}
+
+HTTP *http_head_init(void)
+{
+	HTTP *http;
+
+	if((http=malloc(sizeof(HTTP))) == NULL)
+		return NULL;
+
+	http->element=NULL;
+	http->next=NULL;
+
+	return http;
+}
+
+void http_head_add(HTTP *http,const char *head)
+{
+	HTTP *node;
+
+	if(http->next == NULL)
+	{
+		http->element=head;
+		return;
+	}
+
+	while(http != NULL)
+		http=http->next;
+
+	node=malloc(sizeof(HTTP));
+	node->element=head;
+	node->next=NULL;
+	http=node;
+}
+
+int http_head_replace(HTTP *http,const char *replace,const char *head)
+{
+	while(http != NULL)
+	{
+		if(strstr(http->element,replace))
+		{
+			http->element=head;
+			return 0;
+		}
+
+		http=http->next;
+	}
+
+	return -1;
+}
+
+int http_head_out(HTTP *http,const char *out)
+{
+	while(http != NULL)
+	{
+		if(strstr(http->element,out))
+		{
+			free(http);
+			http=http->next;
+			return 0;
+		}
+
+		http=http->next;
+	}
+
+	return -1;
+}
+
+void http_head_clean(HTTP *http)
+{
+	HTTP *temp;
+
+	temp=http->next;
+	http->next=NULL;
+	http->element=NULL;
+
+	while(temp != NULL)
+	{
+		free(temp);
+		temp=temp->next;
+	}
+}
+
+void http_head_destroy(HTTP *http)
+{
+	while(http != NULL)
+	{
+		free(http);
+		http=http->next;
+	}
 }
