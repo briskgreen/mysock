@@ -599,6 +599,7 @@ char *http_post_simple(const char *url,unsigned int port,
 	char *head;
 	char *host;
 	char *accept="Accept: */*\n";
+	char *content_type="Content-Type: application/x-www-form-urlencoded\n";
 	char *connection="Connection: close\n";
 	char *content_length;
 	int host_len=0;
@@ -632,6 +633,7 @@ char *http_post_simple(const char *url,unsigned int port,
 	send(sockfd,head,strlen(head),0);
 	send(sockfd,host,strlen(host),0);
 	send(sockfd,accept,strlen(accept),0);
+	send(sockfd,content_type,strlen(content_type),0);
 	send(sockfd,connection,strlen(connection),0);
 	send(sockfd,content_length,strlen(content_length),0);
 	send(sockfd,data,strlen(data),0);
@@ -669,7 +671,6 @@ char *https_get_simple(const char *url,unsigned int port)
 	host=string_add("Host: %s\n",strnstr(url+n,host_len));
 	head=string_add("GET %s HTTP/1.1\n",url+n+host_len);
 	res=strnstr(host+6,-1);
-	printf("%s%s%s",head,host,res);
 
 	if((ssl=ssl_connect(res,port,NULL,NULL)) == NULL)
 	{
@@ -787,5 +788,21 @@ char *strnstr(const char *str,int len)
 	snprintf(res,len+1,str);
 
 	return res;
+}
+
+int to_iconv(const char *from,const char *to,char *in,
+		int in_len,char *des,int des_len)
+{
+	iconv_t cd;
+
+	if((cd=iconv_open(to,from)) == (iconv_t)-1)
+		return -1;
+
+	if(iconv(cd,&in,&in_len,&des,&des_len) == -1)
+		return -1;
+
+	iconv_close(cd);
+
+	return 0;
 }
 
