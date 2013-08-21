@@ -1,8 +1,7 @@
 #include "mysock.h"
 
-void format_str(char *code);
-int htoi(char *s);
 unsigned int url_len(char *url);
+unsigned int unicode_len(const char *str);
 
 SSL_CTX *ssl_ctx;
 int mysock_sockfd;
@@ -156,27 +155,18 @@ void safe_free(void **buf)
 	*buf=NULL;
 }
 
-void format_str(char *code)
+unsigned long htoi(char *s)
 {
 	int i;
-
-	for(i=0;code[i];++i)
-	{
-		if(code[i] == '%')
-			continue;
-		if(code[i] >= 'A' && code[i] <= 'F')
-			code[i]+=32;
-	}
-}
-
-int htoi(char *s)
-{
-	int i;
-	int res;
+	unsigned long res;
 
 	for(i=0,res=0;s[i];++i)
 	{
 		res*=16;
+
+		if(s[i] >= 'A' && s[i] <= 'F')
+			s[i]+=32;
+
 		if(s[i] >= 'a' && s[i] <= 'f')
 			res+=s[i]-87;
 		else
@@ -214,7 +204,6 @@ char *url_decode(char *code)
 	char temp[3]={0};
 	int i,j;
 
-	format_str(code);
 	len=url_len(code);
 	res=malloc(len+1);
 
@@ -802,6 +791,132 @@ int to_iconv(const char *from,const char *to,char *in,
 		return -1;
 
 	iconv_close(cd);
+
+	return 0;
+}
+
+char *match_string(const char *reg,char *data)
+{
+	regex_t preg;
+	regmatch_t pmatch[1];
+	char *res;
+
+	if(regcomp(&preg,reg,0) != 0)
+	{
+		regfree(&preg);
+		return NULL;
+	}
+	if(regexec(&preg,data,1,pmatch,0) != 0)
+	{
+		regfree(&preg);
+		return NULL;
+	}
+	regfree(&preg);
+
+	res=strnstr(data+pmatch[0].rm_so,pmatch[0].rm_eo-pmatch[0].rm_so);
+
+	return res;
+}
+
+char *unicode_to_utf(const char *str)
+{
+	char *temp;
+	char *res;
+	char *buf;
+	int len;
+	int i,j;
+
+	len=unicode_len(str);
+	len*=2;
+	temp=malloc(len+1);
+	res=malloc(len*2);
+	bzero(res,len*2);
+	bzero(temp,len+1);
+
+	for(i=0,j=0;str[i];++i,++j)
+	{
+		if(str[i] == '\\' && str[i+1] == 'u')
+		{
+			buf=strnstr(str+i+4,2);
+			temp[j]=htoi(buf);
+			free(buf);
+			buf=strnstr(str+i+2,2);
+			temp[++j]=htoi(buf);
+			free(buf);
+			i+=5;
+		}
+		else
+		{
+			temp[j]=str[i];
+			temp[++j]=0;
+		}
+	}
+
+	to_iconv("UNICODE//","UTF-8//IGNORE",temp,len,res,len*2);
+	free(temp);
+
+	return res;
+}
+
+unsigned int unicode_len(const char *str)
+{
+	unsigned int len;
+	int i;
+
+	for(i=0,len=0;str[i];++i,++len)
+	{
+		if(str[i] == '\\' && str[i+1] == 'u')
+			i+=5;
+		else
+			++len;
+	}
+
+	return len;
+}
+
+int strreplace(char *str,char *replace,char *des,char *res,int res_len)
+{
+	int index=0;
+	int re_len=strlen(des);
+	int src_len=strlen(replace);
+	char *p;
+	int str_len=strlen(str);
+	int len=0;
+
+	res[0]='\0';
+	while(1)
+	{
+		p=strstr(str+index,replace);
+
+		if(p == NULL)
+			break;
+
+		len+=p-str-index+re_len;
+		if(len >= res_len)
+		{
+			res[len]='\0';
+			return len;
+		}
+
+		strncat(res,str+index,p-str-index);
+		strncat(res,des,re_len);
+
+		index=p-str+src_len;
+	}
+
+	if(len == 0)
+		return -1;
+
+	if(str[index] != '\0')
+	{
+		len+=str_len-index;
+		res[len]='\0';
+
+		if(len >= res_len)
+			return len;
+
+		strncat(res,str+index,str_len-index);
+	}
 
 	return 0;
 }

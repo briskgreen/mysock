@@ -108,4 +108,12 @@ char *strnstr(const char *str,int len);
 int to_iconv(const char *from,const char *to,char *in,
 		int in_len,char *des,int des_len);
 
+unsigned long htoi(char *s);
+
+char *match_string(const char *reg,char *data);
+
+char *unicode_to_utf(const char *str);
+
+int strreplace(char *str,char *replace,char *des,char *res,int res_len);
+
 #endif
