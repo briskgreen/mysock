@@ -774,7 +774,7 @@ char *strnstr(const char *str,int len)
 	res=malloc(len+1);
 	if(res == NULL)
 		return NULL;
-	snprintf(res,len+1,str);
+	snprintf(res,len+1,"%s",str);
 
 	return res;
 }
