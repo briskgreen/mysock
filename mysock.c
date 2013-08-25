@@ -344,11 +344,11 @@ char *read_all(int sockfd)
 		{
 			char *temp;
 
-			temp=malloc(len);
+			while((temp=malloc(len)) == NULL);
 			strncpy(temp,res,len);
 			free(res);
 
-			res=malloc(len+MEM_SIZE);
+			while((res=malloc(len+MEM_SIZE)) == NULL);
 			strncpy(res,temp,len);
 			free(temp);
 
@@ -381,11 +381,11 @@ char *ssl_read_all(SSL *ssl)
 		{
 			char *temp;
 
-			temp=malloc(len);
+			while((temp=malloc(len)) == NULL);
 			strncpy(temp,res,len);
 			free(res);
 
-			res=malloc(len+MEM_SIZE);
+			while((res=malloc(len+MEM_SIZE)) == NULL);
 			strncpy(res,temp,len);
 			free(temp);
 
