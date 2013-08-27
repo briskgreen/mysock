@@ -904,8 +904,8 @@ int strreplace(char *str,char *replace,char *des,char *res,int res_len)
 		index=p-str+src_len;
 	}
 
-	if(len == 0)
-		return -1;
+/*	if(len == 0)
+		return -1;*/
 
 	if(str[index] != '\0')
 	{
