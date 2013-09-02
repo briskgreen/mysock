@@ -537,6 +537,7 @@ char *http_get_simple(const char *url,unsigned int port)
 	int sockfd;
 	char *res;
 	char *accept="Accept: */*\n";
+	char *use_age="User-Agent: mysock/1.0\n";
 	char *connection="Connection: close\n\n";
 	char *host;
 	char *head;
@@ -569,6 +570,7 @@ char *http_get_simple(const char *url,unsigned int port)
 	send(sockfd,head,strlen(head),0);
 	send(sockfd,host,strlen(host),0);
 	send(sockfd,accept,strlen(accept),0);
+	send(sockfd,use_age,strlen(use_age),0);
 	send(sockfd,connection,strlen(connection),0);
 
 	free(head);
@@ -588,6 +590,7 @@ char *http_post_simple(const char *url,unsigned int port,
 	char *head;
 	char *host;
 	char *accept="Accept: */*\n";
+	char *use_age="User-Agent: mysock/1.0\n";
 	char *content_type="Content-Type: application/x-www-form-urlencoded\n";
 	char *connection="Connection: close\n";
 	char *content_length;
@@ -622,6 +625,7 @@ char *http_post_simple(const char *url,unsigned int port,
 	send(sockfd,head,strlen(head),0);
 	send(sockfd,host,strlen(host),0);
 	send(sockfd,accept,strlen(accept),0);
+	send(sockfd,use_age,strlen(use_age),0);
 	send(sockfd,content_type,strlen(content_type),0);
 	send(sockfd,connection,strlen(connection),0);
 	send(sockfd,content_length,strlen(content_length),0);
@@ -644,6 +648,7 @@ char *https_get_simple(const char *url,unsigned int port)
 	char *head;
 	char *host;
 	char *accept="Accept: */*\n";
+	char *use_age="User-Agent: mysock/1.0\n";
 	char *connection="Connection: close\n\n";
 	int host_len=0;
 	int n=0;
@@ -674,6 +679,7 @@ char *https_get_simple(const char *url,unsigned int port)
 	SSL_write(ssl,head,strlen(head));
 	SSL_write(ssl,host,strlen(host));
 	SSL_write(ssl,accept,strlen(accept));
+	SSL_write(ssl,use_age,strlen(use_age));
 	SSL_write(ssl,connection,strlen(connection));
 
 	free(head);
@@ -693,6 +699,7 @@ char *https_post_simple(const char *url,unsigned int port,
 	char *head;
 	char *host;
 	char *accept="Accept: */*\n";
+	char use_age="User-Agent: mysock/1.0\n";
 	char *connection="Connection: close\n";
 	char *content_length;
 	int host_len=0;
@@ -726,6 +733,7 @@ char *https_post_simple(const char *url,unsigned int port,
 	SSL_write(ssl,head,strlen(head));
 	SSL_write(ssl,host,strlen(host));
 	SSL_write(ssl,accept,strlen(accept));
+	SSL_write(ssl,use_age,strlen(use_age));
 	SSL_write(ssl,connection,strlen(connection));
 	SSL_write(ssl,content_length,strlen(content_length));
 	SSL_write(ssl,data,strlen(data));
