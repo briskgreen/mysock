@@ -759,12 +759,15 @@ char *string_add(const char *format,...)
 		return NULL;
 	len=vfprintf(fp,format,arg_ptr);
 	fclose(fp);
+	va_end(arg_ptr);
+
 	if(len < 0)
 		return NULL;
 
 	res=malloc(len+1);
 	if(res == NULL)
 		return NULL;
+	va_start(arg_ptr,format);
 	vsnprintf(res,len+1,format,arg_ptr);
 
 	va_end(arg_ptr);
