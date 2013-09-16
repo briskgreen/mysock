@@ -106,7 +106,7 @@ char *string_add(const char *format,...);
 char *strnstr(const char *str,int len);
 
 int to_iconv(const char *from,const char *to,char *in,
-		int in_len,char *des,int des_len);
+		size_t in_len,char *des,size_t des_len);
 
 unsigned long htoi(char *s);
 
