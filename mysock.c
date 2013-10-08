@@ -704,7 +704,7 @@ char *https_post_simple(const char *url,unsigned int port,
 	char *head;
 	char *host;
 	char *accept="Accept: */*\n";
-	char use_age="User-Agent: mysock/1.0\n";
+	char *use_age="User-Agent: mysock/1.0\n";
 	char *connection="Connection: close\n";
 	char *content_length;
 	int host_len=0;
