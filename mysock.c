@@ -248,6 +248,11 @@ bool tcp_is_established(int sockfd)
 	}
 }
 
+bool ssl_is_established(SSL *ssl)
+{
+	return tcp_is_established(SSL_get_fd(ssl));
+}
+
 SSL *ssl_connect(const char *host,unsigned int port,
 		const char *cafile,const char *capath)
 {
