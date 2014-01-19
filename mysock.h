@@ -4,13 +4,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#endif
+
 #include <string.h>
 #include <errno.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <regex.h>
 #include <openssl/ssl.h>

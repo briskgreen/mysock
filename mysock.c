@@ -561,7 +561,10 @@ char *http_get_simple(const char *url,unsigned int port)
 	head=string_add("GET %s HTTP/1.1\n",url+n+host_len);
 
 	res=strnstr(host+6,-1);
-
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(0x202,&wsa);
+#endif
 	if((sockfd=tcp_connect(res,port)) == -1)
 	{
 		free(res);
@@ -583,6 +586,9 @@ char *http_get_simple(const char *url,unsigned int port)
 
 	res=read_all(sockfd);
 	close(sockfd);
+#ifdef _WIN32
+	WSACleanup();
+#endif
 
 	return res;
 }
@@ -616,6 +622,10 @@ char *http_post_simple(const char *url,unsigned int port,
 	head=string_add("POST %s HTTP/1.1\n",url+n+host_len);
 	res=strnstr(host+6,-1);
 
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(0x202,&wsa);
+#endif
 	if((sockfd=tcp_connect(res,port)) == -1)
 	{
 		free(host);
@@ -642,6 +652,9 @@ char *http_post_simple(const char *url,unsigned int port,
 
 	res=read_all(sockfd);
 	close(sockfd);
+#ifdef _WIN32
+	WSACleanup();
+#endif
 
 	return res;
 }
@@ -671,6 +684,10 @@ char *https_get_simple(const char *url,unsigned int port)
 	head=string_add("GET %s HTTP/1.1\n",url+n+host_len);
 	res=strnstr(host+6,-1);
 
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(0x202,&wsa);
+#endif
 	if((ssl=ssl_connect(res,port,NULL,NULL)) == NULL)
 	{
 		free(res);
@@ -692,6 +709,9 @@ char *https_get_simple(const char *url,unsigned int port)
 
 	res=ssl_read_all(ssl);
 	ssl_close(ssl);
+#ifdef _WIN32
+	WSACleanup();
+#endif
 
 	return res;
 }
@@ -724,6 +744,10 @@ char *https_post_simple(const char *url,unsigned int port,
 	head=string_add("POST %s HTTP/1.1\n",url+n+host_len);
 	res=strnstr(host+6,-1);
 
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(0x202,&wsa);
+#endif
 	if((ssl=ssl_connect(res,port,NULL,NULL)) == NULL)
 	{
 		free(content_length);
@@ -748,6 +772,11 @@ char *https_post_simple(const char *url,unsigned int port,
 	free(content_length);
 
 	res=ssl_read_all(ssl);
+	ssl_close(ssl);
+#ifdef _WIN32
+	WSACleanup();
+#endif
+
 	return res;
 }
 
@@ -755,15 +784,28 @@ char *string_add(const char *format,...)
 {
 	va_list arg_ptr;
 	int len;
-	FILE *fp;
 	char *res;
+	int pipefd[2];
 	
 	va_start(arg_ptr,format);
 
-	if((fp=fopen("/dev/null","w")) == NULL)
+#ifdef _WIN32
+	if(_pipe(pipefd) == -1)
 		return NULL;
-	len=vfprintf(fp,format,arg_ptr);
-	fclose(fp);
+	close(pipefd[0]);
+	if(_dup2(pipefd[1],STDOUT_FILENO) == -1)
+		return NULL;
+#else
+	if(pipe(pipefd) == -1)
+		return NULL;
+	close(pipefd[0]);
+#endif
+	len=vdprintf(pipefd[1],format,arg_ptr);
+#ifdef _WIN32
+	dup2(STDOUT_FILENO,pipefd[1]);
+#endif
+	close(pipefd[1]);
+
 	va_end(arg_ptr);
 
 	if(len < 0)
