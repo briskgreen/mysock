@@ -792,18 +792,17 @@ char *string_add(const char *format,...)
 #ifdef _WIN32
 	if(_pipe(pipefd) == -1)
 		return NULL;
-	close(pipefd[0]);
 	if(_dup2(pipefd[1],STDOUT_FILENO) == -1)
 		return NULL;
 #else
 	if(pipe(pipefd) == -1)
 		return NULL;
-	close(pipefd[0]);
 #endif
 	len=vdprintf(pipefd[1],format,arg_ptr);
 #ifdef _WIN32
 	dup2(STDOUT_FILENO,pipefd[1]);
 #endif
+	close(pipefd[0]);
 	close(pipefd[1]);
 
 	va_end(arg_ptr);
