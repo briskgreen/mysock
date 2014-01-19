@@ -794,13 +794,12 @@ char *string_add(const char *format,...)
 		return NULL;
 	if(_dup2(pipefd[1],STDOUT_FILENO) == -1)
 		return NULL;
+	len=vprintf(format,arg_ptr);
+	_dup2(STDOUT_FILENO,pipe[1]);
 #else
 	if(pipe(pipefd) == -1)
 		return NULL;
-#endif
 	len=vdprintf(pipefd[1],format,arg_ptr);
-#ifdef _WIN32
-	dup2(STDOUT_FILENO,pipefd[1]);
 #endif
 	close(pipefd[0]);
 	close(pipefd[1]);
