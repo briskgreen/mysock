@@ -77,13 +77,12 @@ void init_data_with_client(SA_IN *server_addr,
 
 char *read_line(int sockfd)
 {
-	char *res;
+	char *res=NULL;
 	char temp;
 	int len=0;
 	int n;
-	int flags=1;
 
-	if((res=malloc(MEM_SIZE)) == NULL)
+	if((res=malloc(sizeof(char)*(MEM_SIZE+1))) == NULL)
 		return NULL;
 
 	while((n=recv(sockfd,&temp,sizeof(char),0)) > 0)
@@ -91,27 +90,24 @@ char *read_line(int sockfd)
 		++len;
 		if(len % (MEM_SIZE) == 0)
 		{
-			char *temp;
-
-			temp=malloc(len);
-			strncpy(temp,res,len);
-			free(res);
-
-			res=malloc(len+MEM_SIZE);
-			strncpy(res,temp,len);
-			free(temp);
+			res=realloc(res,sizeof(char)*(len+MEM_SIZE+1));
+			if(res == NULL)
+				return NULL;
 		}
 
 		res[len-1]=temp;
-		flags=0;
 		if(temp == '\n')
 			break;
 	}
 
 
-	res[len-1]='\0';
-	if(flags && n <= 0)
+	if(!len && n <= 0)
 		return NULL;
+
+	for(n=0;n < len;++n)
+		if(res[n] == '\n')
+			break;
+	res[n]='\0';
 
 	return res;
 }
@@ -293,9 +289,8 @@ char *ssl_read_line(SSL *ssl)
 	char temp;
 	int len=0;
 	int n;
-	int flags=1;
 
-	if((res=malloc(MEM_SIZE)) == NULL)
+	if((res=malloc(sizeof(char)*(MEM_SIZE+1))) == NULL)
 		return NULL;
 
 	while((n=SSL_read(ssl,&temp,sizeof(char))) > 0)
@@ -303,26 +298,23 @@ char *ssl_read_line(SSL *ssl)
 		++len;
 		if(len % MEM_SIZE == 0)
 		{
-			char *temp;
-
-			temp=malloc(len);
-			strncpy(temp,res,len);
-			free(res);
-
-			res=malloc(len+MEM_SIZE);
-			strncpy(res,temp,len);
-			free(temp);
+			res=realloc(res,sizeof(char)*(len+MEM_SIZE+1));
+			if(res == NULL)
+				return NULL;
 		}
 
 		res[len-1]=temp;
-		flags=0;
 		if(temp == '\n')
 			break;
 	}
 
-	res[len-1]='\0';
-	if(flags && n <= 0)
+	if(!len && n <= 0)
 		return NULL;
+
+	for(n=0;n < len;++n)
+		if(res[n] == '\n')
+			break;
+	res[n]='\0';
 
 	return res;
 }
